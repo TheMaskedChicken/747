@@ -1,0 +1,34 @@
+name: 747 movements check
+
+on:
+  # Twice daily at 8:30am and 4:30pm New Zealand local time.
+  # Cron in GitHub Actions runs in UTC. NZ is UTC+12 in winter, UTC+13 in summer.
+  # These two crons fire at the right NZ time in *winter* (NZST). During
+  # daylight-saving (roughly late Sep → early Apr) they will fire 1 hour later
+  # than intended. If you want exact times year-round, replace this with a
+  # check inside the script or use two cron lines per season.
+  schedule:
+    - cron: '30 20 * * *'   # 20:30 UTC = 08:30 NZST
+    - cron: '30 4 * * *'    # 04:30 UTC = 16:30 NZST
+
+  # Lets you trigger a manual run from the GitHub Actions UI.
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Run the check
+        env:
+          RAPIDAPI_KEY: ${{ secrets.RAPIDAPI_KEY }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: python check_747s.py
